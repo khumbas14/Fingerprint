@@ -1,62 +1,104 @@
-object ATM {
+import java.util.HashMap;
+import java.util.Map;
+import java.util.Scanner;
 
-  // Simulated database of user accounts with their associated fingerprint data and balance
-  case class UserAccount(accountNumber: String, fingerprintData: String, balance: Double)
+// User class representing a user in the system
+class User {
+    private String userId;
+    private String fingerprint;
 
-  val userAccounts = List(
-    UserAccount("123456789", "fingerprint_hash_1", 1000.00),
-    UserAccount("987654321", "fingerprint_hash_2", 500.00)
-  )
-
-  // Function to simulate fingerprint scanning and matching
-  def scanFingerprint(): String = {
-    // In a real scenario, this would interface with the fingerprint hardware and return the scanned fingerprint data
-    // Here, we will simulate with a simple prompt
-    println("Please place your thumb on the scanner...")
-    val scannedFingerprint = scala.io.StdIn.readLine("Enter simulated fingerprint data: ")
-    scannedFingerprint
-  }
-
-  // Function to find user account by fingerprint
-  def findAccountByFingerprint(fingerprintData: String): Option[UserAccount] = {
-    userAccounts.find(account => account.fingerprintData == fingerprintData)
-  }
-
-  // Function to withdraw money
-  def withdrawMoney(account: UserAccount, amount: Double): Either[String, UserAccount] = {
-    if (amount <= 0) {
-      Left("Invalid withdrawal amount. Please enter a positive number.")
-    } else if (amount > account.balance) {
-      Left("Insufficient balance.")
-    } else {
-      val updatedAccount = account.copy(balance = account.balance - amount)
-      Right(updatedAccount)
+    public User(String userId, String fingerprint) {
+        this.userId = userId;
+        this.fingerprint = fingerprint;
     }
-  }
 
-  // Main function to simulate the withdrawal process
-  def main(args: Array[String]): Unit = {
-    // Step 1: Scan the fingerprint
-    val scannedFingerprint = scanFingerprint()
+    public String getUserId() {
+        return userId;
+    }
 
-    // Step 2: Find the corresponding user account
-    findAccountByFingerprint(scannedFingerprint) match {
-      case Some(account) =>
-        println(s"Welcome, account number ${account.accountNumber}!")
+    public String getFingerprint() {
+        return fingerprint;
+    }
+}
 
-        // Step 3: Enter the amount to withdraw
-        val amount = scala.io.StdIn.readLine("Enter the amount you want to withdraw: ").toDouble
+// FingerprintAuth class to handle registration and authentication
+class FingerprintAuth {
+    private Map<String, User> userDatabase;
 
-        // Step 4: Attempt to withdraw the money
-        withdrawMoney(account, amount) match {
-          case Right(updatedAccount) =>
-            println(s"Withdrawal successful! Your new balance is ${updatedAccount.balance}")
-          case Left(error) =>
-            println(s"Error: $error")
+    public FingerprintAuth() {
+        userDatabase = new HashMap<>();
+    }
+
+    public boolean registerUser(String userId, String fingerprint) {
+        if (userDatabase.containsKey(userId)) {
+            System.out.println("User ID already exists.");
+            return false;
         }
-
-      case None =>
-        println("Fingerprint not recognized. Please try again.")
+        userDatabase.put(userId, new User(userId, fingerprint));
+        System.out.println("User registered successfully.");
+        return true;
     }
-  }
+
+    public boolean authenticateUser(String userId, String fingerprint) {
+        User user = userDatabase.get(userId);
+        if (user != null && user.getFingerprint().equals(fingerprint)) {
+            System.out.println("Authentication successful.");
+            return true;
+        }
+        System.out.println("Authentication failed.");
+        return false;
+    }
+}
+
+// ATM class simulating the ATM interface
+class ATM {
+    private FingerprintAuth fingerprintAuth;
+
+    public ATM() {
+        fingerprintAuth = new FingerprintAuth();
+    }
+
+    public void start() {
+        Scanner scanner = new Scanner(System.in);
+        while (true) {
+            System.out.println("ATM Menu:");
+            System.out.println("1. Register User");
+            System.out.println("2. Authenticate User");
+            System.out.println("3. Exit");
+            System.out.print("Choose an option: ");
+            int choice = scanner.nextInt();
+            scanner.nextLine();  // Consume newline
+
+            switch (choice) {
+                case 1:
+                    System.out.print("Enter User ID: ");
+                    String userId = scanner.nextLine();
+                    System.out.print("Enter Fingerprint (as string): ");
+                    String fingerprint = scanner.nextLine();
+                    fingerprintAuth.registerUser(userId, fingerprint);
+                    break;
+                case 2:
+                    System.out.print("Enter User ID: ");
+                    userId = scanner.nextLine();
+                    System.out.print("Enter Fingerprint (as string): ");
+                    fingerprint = scanner.nextLine();
+                    fingerprintAuth.authenticateUser(userId, fingerprint);
+                    break;
+                case 3:
+                    System.out.println("Exiting...");
+                    scanner.close();
+                    return;
+                default:
+                    System.out.println("Invalid option. Please try again.");
+            }
+        }
+    }
+}
+
+// Main class to run the application
+public class Main {
+    public static void main(String[] args) {
+        ATM atm = new ATM();
+        atm.start();
+    }
 }
